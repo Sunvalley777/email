@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<script>(function(){try{var t=localStorage.getItem('ztec_theme');}catch(e){}document.documentElement.setAttribute('data-theme', t || 'autumn');})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}지텍 AI 메일 비서{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -75,6 +76,14 @@ pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;background:#f
 .cattabs .search{margin-left:auto;display:flex;gap:6px}.cattabs .search input{width:220px}
 .mailbox{max-height:68vh;overflow-y:auto;border:1px solid var(--line);border-radius:8px;scrollbar-width:thin}
 .mailbox thead th{position:sticky;top:0;background:#f8fafc;z-index:1;box-shadow:0 1px 0 var(--line)}
+
+/* ── 배경 테마: 가을 (지텍 블루 하늘 + 단풍) ── */
+html[data-theme=autumn] body{background:#F3E6D3 url(/theme/autumn.svg) center bottom/cover fixed}
+html[data-theme=autumn] .shell{padding:10px;gap:10px}
+html[data-theme=autumn] .shell > .side{top:10px;height:calc(100vh - 20px);border-radius:16px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+html[data-theme=autumn] .shell .content{background:rgba(246,246,246,.9);border-radius:16px;box-shadow:0 4px 20px rgba(60,40,20,.12);min-height:calc(100vh - 20px)}
+html[data-theme=autumn] .shell main{margin-top:20px}
+html[data-theme=autumn] header{background:rgba(255,255,255,.85);backdrop-filter:blur(8px)}
 @media(max-width:900px){.g2,.g3{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
 </style>
 {% if cats %}<style>{% for c in cats %}{% if c.color %}.t-{{ c.code }}{--c:{{ c.color }}}{% endif %}{% endfor %}</style>{% endif %}

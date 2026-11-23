@@ -1715,3 +1715,15 @@ def dashboard2_read(req: Request, mid: int):
             digest = None
     return render(req, "_d2_read.html", m=m, atts=atts, digest=digest, ocr=ocr, daou=DAOU_MAIL_URL,
                   dg_route=digest_route(m[8], m[16]))
+
+
+# ---------------------------------------------------------------- 화면 배경 테마 (지텍 컬러 + 계절)
+THEME_DIR = BASE / "themes"
+
+
+@app.get("/theme/{name}.svg")
+def theme_svg(name: str):
+    if not re.fullmatch(r"[a-z0-9_-]{1,30}", name) or not (THEME_DIR / f"{name}.svg").exists():
+        raise HTTPException(404)
+    return Response((THEME_DIR / f"{name}.svg").read_bytes(), media_type="image/svg+xml",
+                    headers={"Cache-Control": "public, max-age=86400"})
