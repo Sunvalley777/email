@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="msg" style="display:flex;align-items:center;gap:10px">이 화면은 <b>기존 대시보드</b>입니다. 기본 화면은 새 화면(목록 + 읽기 창)으로 바뀌었습니다. <a class="btn" href="/dashboard2" style="margin-left:auto;padding:6px 12px;font-size:13px">새 화면으로</a></div>
+{% if welcome %}<div class="msg">등록이 완료되었습니다. 첫 메일 수집은 <b>5분 이내</b>, AI 분류는 <b>10~30분 이내</b>에 반영됩니다.</div>{% endif %}
+{% if acct and acct[2] %}<div class="msg err">수집 오류: {{ acct[2] }}</div>{% endif %}
+
+<div class="card topbar">
+  <div class="statline">
+    <span class="small muted" style="white-space:nowrap">📊 {{ plabel }} <b style="color:var(--ink)">{{ total if stats else 0 }}</b>건</span>
+    {% for c in categories %}<a class="chip t-{{ c }} {{ 'on' if cat == c }}" href="{{ qs(cat=c) }}#mails"><i></i>{{ cl(c) }} <b>{{ stats.get(c, 0) }}</b></a>{% endfor %}
+    {% if stats.get('미분류') %}<a class="chip t-미분류" href="{{ qs(cat='미분류') }}#mails"><i></i>미분류 <b>{{ stats['미분류'] }}</b></a>{% endif %}
+    <a href="/settings/categories" class="small muted" style="margin-left:auto" title="분류 이름·색·순서·개인 규칙">✏️ 분류 편집</a>
+  </div>
+  <div class="bar thin">
+  {% for c in categories + ['미분류'] %}{% if stats.get(c) %}<span class="t-{{ c }}" style="width:{{ (stats[c] * 100 / total)|round(1) }}%" title="{{ cl(c) }} {{ stats[c] }}건"></span>{% endif %}{% endfor %}
+  </div>
+  <form method="get" action="/dashboard" class="periodbar">
+    <b>📆 기간</b>
+    {% for k, l in periods %}<a href="{{ qs(period=k, start='', end='') }}" class="{{ 'on' if period == k }}">{{ l }}</a>{% endfor %}
+    <span class="sep"></span>
+    <input type="date" name="start" value="{{ ps.isoformat() if ps else '' }}">
+    <span>~</span>
+    <input type="date" name="end" value="{{ pe.isoformat() if pe else '' }}">
+    <input type="hidden" name="cat" value="{{ cat }}"><input type="hidden" name="q" value="{{ q }}">
+    <button class="btn">적용</button>
+    <span class="muted small" style="margin-left:auto">
+      {% if period != 'all' %}<b style="color:var(--pri)">{{ plabel }}</b> {{ ps or '처음' }} ~ {{ pe or '오늘' }}{% else %}전체 기간{% endif %}
+    </span>
+  </form>
+</div>
+
+<div class="grid g3">
+  <div class="card">
+    <h2>⏰ 다가오는 마감 <span class="small muted">{{ deadlines|length }}건</span></h2>
+    {% if deadlines %}<div class="scroll5"><table>
+    {% for r in deadlines %}{% set d = (r[0] - today).days %}
+      <tr><td style="width:62px" class="{{ 'dday' if d <= 7 }}">{{ 'D-day' if d == 0 else 'D-' ~ d }}</td>
+          <td><a href="/mail/{{ r[5] }}">{{ r[3][:38] }}</a><div class="small muted">{{ r[0] }} · {{ r[2] or '' }}</div></td></tr>
+    {% endfor %}</table></div>{% else %}<p class="muted small">다가오는 마감이 없습니다.</p>{% endif %}
+  </div>
+  <div class="card">
+    <h2>✅ 조치 필요 <span class="small muted">({{ plabel if period != "all" else "최근 30일" }} · {{ actions|length }}건)</span></h2>
+    {% if actions %}<div class="scroll5"><table>
+    {% for r in actions %}
+      <tr><td><span class="tag t-{{ r[1] }}">{{ cl(r[1]) }}</span>
+          <a href="/mail/{{ r[5] }}">{{ r[2][:32] }}</a><div class="small act">→ {{ r[3] }}{% if r[4] %} ({{ r[4] }}까지){% endif %}</div></td></tr>
+    {% endfor %}</table></div>{% else %}<p class="muted small">조치가 필요한 메일이 없습니다.</p>{% endif %}
+  </div>
+  <div class="card">
+    <h2>📅 다가오는 행사·회의 <span class="small muted">{{ events|length }}건</span></h2>
+    {% if events %}<div class="scroll5"><table>
+    {% for r in events %}
+      <tr><td style="width:92px;white-space:nowrap">{{ r[0] }}</td><td><a href="/mail/{{ r[3] }}">{{ r[2][:36] }}</a></td></tr>
+    {% endfor %}</table></div>{% else %}<p class="muted small">예정된 행사·회의가 없습니다.</p>{% endif %}
+  </div>
+</div>
+
+<div class="card" id="mails">
+  <h2>📨 받은 메일 <span class="small muted">{{ plabel }} · {% if cat %}{{ cl(cat) }} · {% endif %}{% if q %}'{{ q }}' · {% endif %}{{ cnt }}건</span></h2>
+  <div class="cattabs">
+    <a href="{{ qs(cat='') }}#mails" class="all {{ 'on' if not cat }}">전체 <b>{{ total if stats else 0 }}</b></a>
+    {% for c in categories %}<a href="{{ qs(cat=c) }}#mails" class="t-{{ c }} {{ 'on' if cat == c }}"><i></i>{{ cl(c) }} <b>{{ stats.get(c, 0) }}</b></a>{% endfor %}
+    <form method="get" action="/dashboard" class="search">
+      <input type="hidden" name="cat" value="{{ cat }}">
+      {% if period != "custom" %}<input type="hidden" name="period" value="{{ period }}">{% endif %}
+      {% if period == "custom" %}<input type="hidden" name="start" value="{{ ps or '' }}"><input type="hidden" name="end" value="{{ pe or '' }}">{% endif %}
+      <input type="text" name="q" value="{{ q }}" placeholder="제목·보낸사람·요약 검색">
+      <button class="btn">검색</button>
+    </form>
+  </div>
+  <div class="mailbox" id="mailbox">
+  <table>
+    <thead><tr><th style="width:90px">날짜</th><th style="width:90px">분류</th><th style="width:150px">보낸 사람</th><th>제목 / AI 요약</th></tr></thead>
+    <tbody id="mailrows">
+    {% include "_mail_rows.html" %}
+    {% if not mails %}<tr><td colspan="4" class="muted">메일이 없습니다. (등록 직후라면 5분 뒤 새로고침)</td></tr>{% endif %}
+    </tbody>
+  </table>
+  <div id="more" class="small muted" style="text-align:center;padding:10px"
+       data-offset="{{ mails|length }}" data-done="{{ 1 if mails|length >= cnt else 0 }}" data-qs="{{ more_qs }}">
+    {% if mails|length < cnt %}아래로 스크롤하면 다음 {{ page }}건을 불러옵니다{% elif cnt %}마지막 메일입니다 ({{ cnt }}건){% endif %}</div>
+  </div>
+</div>
+<script>
+(function(){
+  // 마감·조치·행사: 5건 높이까지만 보이고 나머지는 스크롤
+  function fit(){ document.querySelectorAll('.scroll5').forEach(function(box){
+      var rows = box.querySelectorAll('tr'); box.style.maxHeight = '';
+      if (rows.length > 5) box.style.maxHeight = (rows[5].offsetTop - rows[0].offsetTop) + 'px';
+      box.classList.toggle('more', rows.length > 5); }); }
+  fit(); window.addEventListener('resize', fit);
+
+  // 받은 메일: 스크롤이 끝에 가까워지면 다음 20건 자동 로드
+  var box = document.getElementById('mailbox'), more = document.getElementById('more'),
+      body = document.getElementById('mailrows'), busy = false;
+  if (!more || more.dataset.done === '1') return;
+  function load(){
+    if (busy || more.dataset.done === '1') return; busy = true;
+    more.textContent = '불러오는 중…';
+    var url = '/dashboard/more?offset=' + more.dataset.offset + (more.dataset.qs ? '&' + more.dataset.qs : '');
+    fetch(url, {credentials:'same-origin'}).then(function(r){
+      var has = r.headers.get('X-Has-More') === '1';
+      return r.text().then(function(h){ return [h, has]; });
+    }).then(function(x){
+      body.insertAdjacentHTML('beforeend', x[0]);
+      var n = body.querySelectorAll('tr').length; more.dataset.offset = n;
+      if (!x[1]) { more.dataset.done = '1'; more.textContent = '마지막 메일입니다 (' + n + '건)'; }
+      else more.textContent = '아래로 스크롤하면 다음 {{ page }}건을 불러옵니다';
+      busy = false;
+      if (x[1] && box.scrollHeight <= box.clientHeight + 40) load();   // 화면이 남으면 계속
+    }).catch(function(){ more.textContent = '불러오기 실패 — 스크롤하면 다시 시도'; busy = false; });
+  }
+  new IntersectionObserver(function(es){ if (es[0].isIntersecting) load(); },
+                           {root: box, rootMargin: '0px 0px 200px 0px'}).observe(more);
+})();
+</script>
+<p class="small muted">마지막 수집: {{ acct[1].strftime('%Y-%m-%d %H:%M') if acct and acct[1] else '대기 중' }}</p>
+{% endblock %}

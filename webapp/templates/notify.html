@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block body %}
+<style>.card:target{box-shadow:0 0 0 2px #0062B2;transition:box-shadow .3s}</style>
+<style>.btn.unlink{background:#fff;color:#E41439;border:1px solid #F7C9D2}.btn.unlink:hover{background:#FDECEF;color:#C10F30}</style>
+{% if msg %}<div class="msg">{{ msg }}</div>{% endif %}
+{% if not token_ok %}<div class="msg err">서버에 텔레그램 봇 토큰(TELEGRAM_BOT_TOKEN)이 설정되지 않았습니다. 관리자에게 문의하세요.</div>{% endif %}
+
+<div class="grid g2">
+  <div class="card" id="tg" style="scroll-margin-top:16px">
+    <h2>📱 텔레그램 연결</h2>
+    {% if st.tg_chat_id %}
+      <p><span class="tag" style="--c:#2E8B57">연결됨</span> {{ st.tg_name or '' }} <span class="small muted">· {{ st.tg_linked_at.strftime('%Y-%m-%d %H:%M') }}</span></p>
+      <form method="post" action="/notify/test" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn">테스트 알림 보내기</button></form>
+      <form method="post" action="/notify/unlink" style="display:inline" onsubmit="return confirm('텔레그램 알림 연결을 해제할까요?\n해제하면 휴대폰으로 알림이 오지 않습니다. (웹·PC 알림은 계속)')"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn unlink">🔕 연결 해제</button></form>
+      <p class="small muted" style="margin:8px 0 0">텔레그램 봇 대화방에서 <code>/stop</code>을 보내도 해제됩니다.</p>
+      <script>
+      (function(){   // 봇에서 /stop 하거나 다른 곳에서 해제되면 화면도 자동으로 갱신
+        var t = setInterval(function(){
+          fetch('/api/notify/status', {credentials:'same-origin'}).then(function(r){ return r.json(); }).then(function(d){
+            if (!d.linked){ clearInterval(t); location.reload(); }
+          }).catch(function(){});
+        }, 10000);
+      })();
+      </script>
+    {% elif link %}
+      <div style="display:flex;gap:18px;align-items:flex-start">
+        {% if qr %}<div style="flex:none;text-align:center">
+          <div style="border:1px solid var(--line);border-radius:10px;padding:6px;background:#fff;line-height:0">{{ qr }}</div>
+          <div class="small muted" style="margin-top:4px">남은 시간 <b id="tg-left" style="color:var(--pri);font-family:Montserrat,sans-serif">{{ '%d:%02d'|format(link_left // 60, link_left % 60) }}</b></div>
+        </div>{% endif %}
+        <div style="flex:1">
+          <ol style="line-height:1.9;padding-left:18px;margin:0">
+            <li><b>휴대폰 카메라</b>로 {% if qr %}왼쪽 QR 코드를{% else %}아래 링크를{% endif %} 찍습니다 <span class="small muted">(텔레그램 앱 설치·로그인 필요)</span></li>
+            <li>텔레그램이 열리면 봇 화면에서 <b>[시작]</b>을 누릅니다</li>
+            <li>1분 안에 '✅ 연결 완료' 메시지가 오고, 이 화면이 <b>자동으로</b> '연결됨'으로 바뀝니다</li>
+          </ol>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:10px">
+            <input type="text" id="tg-link" value="{{ link }}" readonly onclick="this.select()" style="font-family:monospace;font-size:12px">
+            <button type="button" class="btn gray" style="white-space:nowrap" onclick="var i=document.getElementById('tg-link');i.select();document.execCommand('copy');this.textContent='복사됨 ✓'">링크 복사</button>
+          </div>
+          <p class="small muted" style="margin:6px 0 0">QR이 안 될 때: PC 텔레그램에서 링크 열기, 또는 텔레그램에서 <b>@{{ bot }}</b> 검색 → <code>/start {{ st.link_code }}</code> 입력</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+        <p id="tg-wait" class="small" style="color:var(--pri);font-weight:600;margin:0;flex:1">⏳ 연결을 기다리는 중… 봇에서 [시작]하면 1분 안에 이 화면이 자동으로 바뀝니다.</p>
+        <form method="post" action="/notify/unlink" style="margin:0"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn unlink">연결 취소</button></form>
+      </div>
+      <form id="tg-renew" method="post" action="/notify/link" style="display:none;margin-top:8px"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn">새 QR 받기</button></form>
+      <script>
+      (function(){
+        var tries = 0, max = 180, left = {{ link_left }};   // 5초 간격 확인 · 남은 시간 표시
+        var cd = setInterval(function(){
+          left--; var el = document.getElementById('tg-left');
+          if (el) el.textContent = Math.max(0, Math.floor(left / 60)) + ':' + ('0' + Math.max(0, left % 60)).slice(-2);
+          if (left <= 0){ clearInterval(cd); clearInterval(t); expire(); }
+        }, 1000);
+        function expire(){
+          var w = document.getElementById('tg-wait');
+          w.innerHTML = '⌛ 연결 코드가 만료되었습니다. 아래 버튼으로 <b>새 QR</b>을 받으세요.';
+          document.querySelectorAll('svg').forEach(function(q){ if (q.closest('div[style*="line-height:0"]')) q.style.opacity = '.15'; });
+          var f = document.getElementById('tg-renew'); if (f) f.style.display = '';
+        }
+        var t = setInterval(function(){
+          tries++;
+          fetch('/api/notify/status', {credentials:'same-origin'}).then(function(r){ return r.json(); }).then(function(d){
+            if (d.linked){ clearInterval(t); document.getElementById('tg-wait').textContent = '✅ 연결되었습니다. 새로고침합니다…'; setTimeout(function(){ location.reload(); }, 800); }
+            else if (!d.pending || tries >= max){ clearInterval(t); clearInterval(cd); expire(); }
+          }).catch(function(){});
+        }, 5000);
+      })();
+      </script>
+    {% else %}
+      {% if link_expired %}<div class="msg err" style="margin-bottom:10px">이전 연결 코드(QR)는 15분이 지나 만료되었습니다. 아래 버튼으로 <b>새 QR</b>을 받아 찍어 주세요.</div>{% endif %}
+      <p class="small">메일이 규칙에 맞으면 휴대폰 텔레그램으로 알려 드립니다.</p>
+      <form method="post" action="/notify/link"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn" {{ 'disabled' if not token_ok }}>텔레그램 연결 시작</button></form>
+    {% endif %}
+  </div>
+
+  <div class="card" id="opt" style="scroll-margin-top:16px">
+    <h2>⚙️ 알림 설정</h2>
+    <form method="post" action="/notify/settings">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <table>
+        <tr><th style="width:110px">알림</th><td><label><input type="checkbox" name="enabled" {{ 'checked' if st.enabled }}> 사용</label></td></tr>
+        <tr><th>보낼 내용</th><td><select name="content_level">{% for k, l in levels %}<option value="{{ k }}" {{ 'selected' if st.content_level == k }}>{{ l }}</option>{% endfor %}</select>
+          <div class="small muted">텔레그램은 외부 서버를 거칩니다. 보안등급 L1 메일은 항상 '최소'로 보냅니다.</div></td></tr>
+        <tr><th>조용한 시간</th><td><input type="number" name="quiet_start" value="{{ st.quiet_start }}" min="0" max="23" style="width:70px"> 시 ~
+          <input type="number" name="quiet_end" value="{{ st.quiet_end }}" min="0" max="23" style="width:70px"> 시
+          <label style="margin-left:10px"><input type="checkbox" name="weekend_quiet" {{ 'checked' if st.weekend_quiet }}> 주말 제외</label>
+          <div class="small muted">이 시간에 온 메일은 모아 두었다가 끝나면 한 번에 보냅니다.</div></td></tr>
+        <tr><th>마감 리마인드</th><td>D-<input type="text" name="remind_days" value="{{ st.remind_days }}" style="width:90px"> <span class="small muted">(쉼표 구분, 매일 08시 이후)</span></td></tr>
+      </table>
+      <p><button class="btn">저장</button></p>
+    </form>
+  </div>
+</div>
+
+<div class="card" id="rules" style="scroll-margin-top:16px">
+  <h2>📋 알림 규칙 <span class="small muted">— 하나라도 맞으면 알림 · 규칙 안의 조건은 모두 만족 · 쉼표는 '또는'</span></h2>
+  <table>
+    <tr><th>이름</th><th>보낸 사람</th><th>제목 키워드</th><th>분류</th><th>세부분류</th><th>조치 필요만</th><th>마감 N일 이내</th><th style="width:150px"></th></tr>
+    {% for r in rules %}
+    <tr style="{{ 'opacity:.45' if not r[2] }}">
+      <td><b>{{ r[1] }}</b></td><td class="small">{{ r[3] or '' }}</td><td class="small">{{ r[4] or '' }}</td>
+      <td>{% if r[5] %}<span class="tag t-{{ r[5] }}">{{ cl(r[5]) }}</span>{% endif %}</td><td class="small">{{ r[6] or '' }}</td>
+      <td>{{ '✔' if r[7] }}</td><td>{{ r[8] if r[8] is not none else '' }}</td>
+      <td>
+        <form method="post" action="/notify/rule/{{ r[0] }}/toggle" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn gray" style="padding:4px 10px">{{ '끄기' if r[2] else '켜기' }}</button></form>
+        <form method="post" action="/notify/rule/{{ r[0] }}/delete" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn red" style="padding:4px 10px">삭제</button></form>
+      </td>
+    </tr>
+    {% else %}<tr><td colspan="8" class="muted small">규칙이 없습니다. 텔레그램을 연결하면 기본 규칙 2개(조치 필요 메일, 정부과제 공고·수요조사)가 자동으로 만들어집니다.</td></tr>{% endfor %}
+    <tr style="background:#fafcfd">
+      <td><input form="addrule" type="text" name="name" placeholder="규칙 이름 (비우면 자동)"></td>
+      <td><input form="addrule" type="text" name="from_contains" placeholder="keit.re.kr, 대표이사"></td>
+      <td><input form="addrule" type="text" name="subject_contains" placeholder="긴급, 견적"></td>
+      <td><select form="addrule" name="category"><option value="">(전체)</option>{% for c in categories %}<option value="{{ c }}">{{ cl(c) }}</option>{% endfor %}</select></td>
+      <td><input form="addrule" type="text" name="subtype_contains" placeholder="공고, 영업·견적"></td>
+      <td><input form="addrule" type="checkbox" name="action_only"></td>
+      <td><input form="addrule" type="text" name="deadline_days" placeholder="7" style="width:60px"></td>
+      <td><button form="addrule" class="btn">추가</button></td>
+    </tr>
+  </table>
+  <form id="addrule" method="post" action="/notify/rule/add"><input type="hidden" name="csrf" value="{{ csrf }}"></form>
+  <p class="small muted">예) 고객사 견적 문의: 분류 '외부협력' + 세부분류 '영업·견적' / 대표님 메일: 보낸 사람 'ceo@z-tec.co.kr' / 긴급 메일: 제목 '긴급, 급함'</p>
+</div>
+
+<div class="card">
+  <h2>🕘 최근 알림 기록 <span class="small muted">· 전체 목록은 <a href="/alerts" style="color:var(--pri)">🔔 알림센터</a></span></h2>
+  <table>
+    {% for l in logs %}<tr><td class="small" style="width:110px">{{ l[0].strftime('%m-%d %H:%M') }}</td>
+      <td class="small" style="width:90px">{{ {'new':'새 메일','test':'테스트'}.get(l[1], l[1].replace('remind-','마감 D-')) }}</td>
+      <td class="small">{% if l[5] %}<a href="/mail/{{ l[5] }}">{{ (l[4] or '')[:50] }}</a>{% endif %}</td>
+      <td class="small muted">{{ l[2] or '' }}</td><td class="small">{{ {'sent':'📱 전송','pending':'📱 대기','none':'🔔 사내','expired':'만료','skip':'생략'}.get(l[3], '📱 전송') }}</td></tr>
+    {% else %}<tr><td class="muted small">아직 보낸 알림이 없습니다.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

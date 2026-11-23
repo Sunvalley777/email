@@ -1,0 +1,12 @@
+[Unit]
+Description=Z-TEC AI Mail Collector (IMAP -> labrag-pg) + 즉시 분류
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=redmine
+WorkingDirectory=/home/redmine/mail-collector
+ExecStart=/home/redmine/mail-collector/venv/bin/python collector.py
+ExecStartPost=-/home/redmine/mail-collector/venv/bin/python classifier/classify.py --limit 30
+TimeoutStartSec=1800

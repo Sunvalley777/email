@@ -1,0 +1,79 @@
+<div class="rbar">
+  <a class="btn p" href="{{ daou }}" target="_blank" rel="noopener"><svg class="i"><use href="#ext"/></svg>다우오피스에서 열기</a>
+  <a class="btn" href="/mail/{{ m[0] }}"><svg class="i"><use href="#tag"/></svg>분류 수정·상세</a>
+  <button class="btn g" type="button" data-act="reanalyze" data-id="{{ m[0] }}"><svg class="i"><use href="#refresh"/></svg>AI 다시 분석</button>
+  <span class="sp"></span>
+  <span class="sec"><svg class="i sm"><use href="#lock"/></svg>{{ m[16] or '-' }} · {{ '외부 Claude 가능' if dg_route == 'claude' else '사내 AI 처리' }}</span>
+</div>
+<div class="rbody">
+  <h1>{{ m[6] or '(제목 없음)' }}</h1>
+  <div class="who">
+    <div class="av">{{ (m[2] or m[3] or '?')[:1] }}</div>
+    <div><b>{{ m[2] or m[3] }}</b> <span class="addr">&lt;{{ m[3] }}&gt;</span>
+      {% if m[4] %}<div class="to">받는 사람 {{ m[4]|join(', ')|truncate(80) }}{% if m[5] %} · 참조 {{ m[5]|join(', ')|truncate(60) }}{% endif %}</div>{% endif %}</div>
+    <div class="t">{{ m[1].strftime('%Y-%m-%d %H:%M') if m[1] else '' }}</div>
+  </div>
+  <div class="tags">
+    {% if m[8] %}<span class="chip"><span class="dot t-{{ m[8] }}"></span>{{ cl(m[8]) }}{% if m[9] and m[9] != m[8] %} · {{ m[9] }}{% endif %}</span>{% else %}<span class="chip">AI 분석 대기</span>{% endif %}
+    {% if m[18] %}<span class="chip" title="사람이 고친 분류">✋ 수동 확정</span>{% elif (m[19] or '').startswith('user:') %}<span class="chip">📌 내 규칙</span>{% endif %}
+    {% if m[12] %}<span class="chip act">조치 필요</span>{% endif %}
+    {% if m[14] %}{% set d = (m[14] - today).days %}<span class="chip {{ 'dl' if 0 <= d <= 7 else 'dl2' }}">마감 {{ m[14] }}{% if d == 0 %} · D-day{% elif d > 0 %} · D-{{ d }}{% else %} · 지남{% endif %}</span>{% endif %}
+    {% if m[15] %}<span class="chip ev">📅 행사 {{ m[15] }}</span>{% endif %}
+  </div>
+
+  <div class="aic">
+    {% set can_dg = (m[7] or (ocr and ocr[0])) %}
+    <div class="h"><svg class="i"><use href="#spark"/></svg>AI 요약
+      <span class="src"><svg class="i sm"><use href="#lock"/></svg>{% if digest %}{{ '외부 Claude' if (digest._model or '').startswith('claude') else '사내 AI' }} · {{ digest._at.strftime('%m-%d %H:%M') }} 정리{% else %}사내 AI 자동 분석{% endif %}{% if ocr and ocr[0] %} · 이미지 글자 포함{% endif %}</span>
+      {% if digest %}
+      <button class="btn redo" type="button" data-act="digest" data-id="{{ m[0] }}" {{ 'disabled' if not can_dg }}><svg class="i sm"><use href="#spark"/></svg>다시 정리</button>
+      {% else %}
+      <button class="btn ai" type="button" data-act="digest" data-id="{{ m[0] }}" {{ 'disabled' if not can_dg }} title="주요 내용·할 일·일정·숫자까지 정리 (10~60초)"><svg class="i sm"><use href="#spark"/></svg>자세히 정리</button>
+      {% endif %}</div>
+    {% set one = (digest.one_line if digest and digest.one_line else (m[11] if m[11] and m[11] != m[6] else '')) %}
+    {% if one %}<div class="one">{{ one }}</div>{% elif not m[8] %}<div class="one muted">아직 AI 분석 전입니다 (수집 후 10~30분)</div>{% endif %}
+    <div class="aig">
+      <div>
+        <div class="lab">내가 할 일</div>
+        {% if digest and digest.todo %}{% for t in digest.todo %}<div class="todo"><span class="cb"></span><div>{{ t }}</div></div>{% endfor %}
+        {% elif m[12] and m[13] %}<div class="todo"><span class="cb"></span><div>{{ m[13] }}{% if m[14] %}<span class="due">마감 {{ m[14] }}</span>{% endif %}</div></div>
+        {% else %}<div class="none">할 일 없음</div>{% endif %}
+        {% if digest and digest.points %}<div class="lab" style="margin-top:10px">주요 내용</div>
+          <ul class="pts">{% for p in digest.points %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div>
+        <div class="lab">핵심 정보</div>
+        <div class="kv">
+          <span>상대</span><div>{{ m[10] or m[2] or '-' }}</div>
+          <span>마감</span><div>{{ m[14] or '-' }}</div>
+          <span>행사일</span><div>{{ m[15] or '-' }}</div>
+          {% if digest %}{% for x in digest.dates[:3] %}<span>일정</span><div><b>{{ x.date }}</b> {{ x.what }}</div>{% endfor %}
+          {% for x in digest.figures[:3] %}<span>숫자</span><div>{{ x }}</div>{% endfor %}{% endif %}
+        </div>
+      </div>
+    </div>
+    {% if not digest and can_dg %}
+    <button class="dgcta" type="button" data-act="digest" data-id="{{ m[0] }}">
+      <svg class="i"><use href="#spark"/></svg>
+      <span><b>자세히 정리하기</b><small>주요 내용 · 할 일 · 일정 · 숫자까지 한 번에 정리합니다 · 10~60초 · 결과는 저장</small></span>
+      <span class="arr">→</span></button>
+    {% endif %}
+    <div class="dbar"><span>요약은 원문 기준 참고용입니다</span><span class="sp"></span><span class="dmsg"></span></div>
+  </div>
+
+  <div class="mailbody">
+    <div class="mbh">
+      {% if m[17] %}<button class="seg on" data-v="html">원본</button>{% endif %}
+      <button class="seg {{ '' if m[17] else 'on' }}" data-v="text">텍스트</button>
+      {% if ocr and ocr[0] %}<button class="seg" data-v="ocr">이미지 글자 (OCR)</button>{% endif %}
+    </div>
+    {% if m[17] %}<iframe class="pane v-html" src="/mail/{{ m[0] }}/html" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>{% endif %}
+    <pre class="pane v-text" style="{{ 'display:none' if m[17] }}">{{ m[7] or '(텍스트 본문 없음)' }}</pre>
+    {% if ocr and ocr[0] %}<pre class="pane v-ocr" style="display:none">{{ ocr[0] }}</pre>{% endif %}
+    {% if atts %}<div class="att">{% for a in atts %}
+      {% set ext = (a[1] or '').rsplit('.', 1)[-1][:4]|upper if '.' in (a[1] or '') else 'FILE' %}
+      <a class="af" href="/att/{{ a[0] }}"><div class="ic e-{{ ext }}">{{ ext }}</div>
+        <div><div class="fn">{{ a[1] }}</div><small>{{ ((a[2] or 0)/1024)|round(1) }} KB{% if a[3] %} · DRM{% endif %}</small></div></a>
+    {% endfor %}</div>{% endif %}
+  </div>
+</div>

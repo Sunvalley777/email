@@ -1,0 +1,92 @@
+{# 공통 왼쪽 메뉴 — 새 화면(dashboard2)과 알림함·알림 규칙·설정·관리자 등 모든 화면에서 같은 메뉴 유지 #}
+{% set path = request.url.path %}
+{% set on_d2 = path.startswith('/dashboard2') %}
+{% macro dl2(v='', c='', s='') -%}
+{%- if on_d2 and qs is defined -%}{{ qs(view=v, cat=c, sub=s) }}
+{%- else -%}/dashboard2{% if v or c or s %}?{% if v %}view={{ v }}{% endif %}{% if c %}{{ '&' if v }}cat={{ c|urlencode }}{% endif %}{% if s %}&sub={{ s|urlencode }}{% endif %}{% endif %}
+{%- endif -%}
+{%- endmacro %}
+{% set pg = 'd2' if on_d2 else ('alerts' if path.startswith('/alerts') else ('notify' if path.startswith('/notify') else ('settings' if path.startswith('/settings') else ('admin' if path.startswith('/admin') else ('old' if path == '/dashboard' else ('mail' if path.startswith('/mail') else '')))))) %}
+<style>
+.side{--s-bg:#F2F3F5;--s-ink:#1E2229;--s-ink2:#555B66;--s-ink3:#8B919C;--s-line:#E2E4E8;--s-acc:#0062B2;--s-acc3:#00467F;--s-red:#E41439;
+  background:var(--s-bg);border-right:1px solid var(--s-line);padding:14px 10px;display:flex;flex-direction:column;gap:1px;overflow-y:auto;
+  font-family:"Noto Sans KR","Malgun Gothic",sans-serif;font-size:13.5px;letter-spacing:-.1px;color:var(--s-ink)}
+.side svg.si{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.side a{color:inherit;text-decoration:none}
+.side .brand{display:flex;align-items:center;gap:9px;padding:4px 8px 12px;font-weight:700;font-size:14.5px}
+.side .brand img{height:24px;display:block}
+.side .brand div{border-left:1px solid var(--s-line);padding-left:10px;line-height:1.25}
+.side .brand small{display:block;font-size:11px;color:var(--s-ink3);font-weight:500}
+.side .nav{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:7px;color:var(--s-ink2);font-weight:500}
+.side .nav:hover{background:#E8EAEE;text-decoration:none}
+.side .nav.on{background:#fff;color:var(--s-ink);box-shadow:0 1px 2px rgba(20,25,35,.06),0 1px 1px rgba(20,25,35,.03);font-weight:600}
+.side .nav.on svg.si{color:var(--s-acc)}
+.side .nav .n{margin-left:auto;font-family:"Montserrat","Noto Sans KR",sans-serif;font-size:11px;color:var(--s-ink3);font-variant-numeric:tabular-nums}
+.side .nav .b{margin-left:auto;background:var(--s-red);color:#fff;border-radius:9px;font-size:10.5px;font-weight:700;padding:1px 6px}
+.side .sec{font-size:11px;color:var(--s-ink3);font-weight:600;padding:14px 10px 4px;display:flex;justify-content:space-between;align-items:center}
+.side .sec a{color:var(--s-ink3);font-weight:500}.side .sec a:hover{color:var(--s-ink)}
+.side .dot{width:8px;height:8px;border-radius:50%;background:var(--c,#ccc);flex:none;display:inline-block}
+.side .nav .st{margin-left:auto;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:9px;white-space:nowrap}
+.side .nav .st.ok{background:#E5F4EC;color:#1E7A46}.side .nav .st.warn{background:#FFF4ED;color:#C2410C}
+.side .nav .st.off{background:#ECEEF1;color:#6B7280}.side .nav .st.bad{background:#FDECEF;color:#E41439}
+.side .foot{margin-top:auto;border-top:1px solid var(--s-line);padding-top:8px}
+.side .me{display:flex;align-items:center;gap:9px;padding:8px 10px;font-size:12px;line-height:1.35}
+.side .av{width:28px;height:28px;border-radius:50%;background:#DCE9F7;color:var(--s-acc3);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+</style>
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="s-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+<symbol id="s-check" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+<symbol id="s-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="s-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+<symbol id="s-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+<symbol id="s-tag" viewBox="0 0 24 24"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/></symbol>
+<symbol id="s-layout" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></symbol>
+<symbol id="s-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+<symbol id="s-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></symbol>
+<symbol id="s-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="s-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+</defs></svg>
+<aside class="side">
+  <a class="brand" href="/dashboard2"><img src="{{ logo }}" alt="Z-TEC"><div>메일 비서<small>AI Mail Assistant</small></div></a>
+  <a class="nav {{ 'on' if pg == 'd2' and sb.view == 'all' and not sb.cat and not sb.sub }}" href="{{ dl2() }}"><svg class="si"><use href="#s-inbox"/></svg>받은 메일<span class="n">{{ sb.total }}</span></a>
+  <a class="nav {{ 'on' if pg == 'd2' and sb.view == 'action' and not sb.cat and not sb.sub }}" href="{{ dl2('action') }}"><svg class="si"><use href="#s-check"/></svg>조치 필요<span class="n">{{ sb.n_action }}</span></a>
+  <a class="nav {{ 'on' if pg == 'd2' and sb.view == 'deadline' }}" href="{{ dl2('deadline') }}"><svg class="si"><use href="#s-clock"/></svg>다가오는 마감<span class="n">{{ sb.n_deadline }}</span></a>
+  <a class="nav {{ 'on' if pg == 'd2' and sb.view == 'event' }}" href="{{ dl2('event') }}"><svg class="si"><use href="#s-cal"/></svg>행사·회의<span class="n">{{ sb.n_event }}</span></a>
+  <a class="nav {{ 'on' if pg == 'alerts' }}" href="/alerts"><svg class="si"><use href="#s-bell"/></svg>알림함<span class="b" id="badge" style="{{ '' if sb.alerts else 'display:none' }}">{{ sb.alerts }}</span></a>
+
+  <div class="sec"><span>분류</span><a href="/settings/categories" title="이름·색·순서 편집">편집</a></div>
+  {% for c in cats if not c.hidden %}
+  <a class="nav {{ 'on' if pg == 'd2' and sb.cat == c.code and not sb.sub }}" href="{{ dl2('', c.code) }}"><span class="dot t-{{ c.code }}"></span>{{ c.label }}<span class="n">{{ sb.stats.get(c.code, 0) }}</span></a>
+  {% endfor %}
+  {% if sb.stats.get('미분류') %}<a class="nav {{ 'on' if pg == 'd2' and sb.cat == '미분류' }}" href="{{ dl2('', '미분류') }}"><span class="dot t-미분류"></span>미분류<span class="n">{{ sb.stats['미분류'] }}</span></a>{% endif %}
+
+  {% if sb.subs %}<div class="sec"><span>내 세부분류</span><a href="/settings/categories">관리</a></div>
+  {% for name, scat, n in sb.subs %}
+  <a class="nav {{ 'on' if pg == 'd2' and sb.sub == name }}" href="{{ dl2('', scat, name) }}"><svg class="si" style="color:var(--s-ink3)"><use href="#s-tag"/></svg>{{ name }}<span class="n">{{ n }}</span></a>
+  {% endfor %}{% endif %}
+
+  <div class="sec"><span>설정</span></div>
+  <a class="nav sub {{ 'on' if pg == 'notify' }}" data-hash="#rules" href="/notify#rules" title="어떤 메일을 알릴지 정하는 규칙"><svg class="si"><use href="#s-sliders"/></svg>알림 규칙<span class="n">{{ sb.rules_on }}/{{ sb.rules_all }}</span></a>
+  <a class="nav sub" data-hash="#tg" href="/notify#tg" title="알림 사용 여부 · 텔레그램 · PC 알림 연결"><svg class="si"><use href="#s-bell"/></svg>알림 연결·사용
+    <span class="st {{ 'ok' if sb.notify_on and (sb.tg_linked or sb.pc_on) else ('off' if not sb.notify_on else 'warn') }}">{{ '꺼짐' if not sb.notify_on else ('연결됨' if sb.tg_linked else ('PC만' if sb.pc_on else '미연결')) }}</span></a>
+  <a class="nav sub {{ 'on' if path.startswith('/settings/categories') }}" href="/settings/categories" title="분류 이름·색·순서, 내 분류 규칙, 내 세부분류"><svg class="si"><use href="#s-tag"/></svg>분류 설정{% if sb.n_urule %}<span class="n">규칙 {{ sb.n_urule }}</span>{% endif %}</a>
+  <a class="nav sub {{ 'on' if path == '/settings' }}" href="/settings" title="수집 상태, 수집 중지, 데이터 삭제"><svg class="si"><use href="#s-gear"/></svg>수집 설정
+    <span class="st {{ 'bad' if sb.collect_err else ('ok' if sb.collect_on else 'off') }}">{{ '오류' if sb.collect_err else ('수집 중' if sb.collect_on else '중지') }}</span></a>
+  {% if is_admin %}<a class="nav sub {{ 'on' if pg == 'admin' }}" href="/admin"><svg class="si"><use href="#s-shield"/></svg>관리자</a>{% endif %}
+
+  <div class="foot">
+    <a class="nav {{ 'on' if pg == 'old' }}" href="/dashboard" title="이전 대시보드 화면 (비교용으로 당분간 유지)"><svg class="si"><use href="#s-layout"/></svg>기존 화면</a>
+    {% set acct = sb.acct %}
+    <div class="me"><div class="av">{{ ((acct[2] if acct else '') or me)[:1] }}</div>
+      <div style="min-width:0"><b>{{ (acct[2] if acct else '') or me.split('@')[0] }}</b>
+        <div style="color:{{ '#E41439' if acct and acct[1] else 'var(--s-ink3)' }}">{% if acct and acct[1] %}수집 오류{% elif acct and acct[0] %}마지막 수집 {{ acct[0].strftime('%H:%M') }}{% else %}수집 대기{% endif %}</div></div>
+      <a href="/logout" title="로그아웃" style="margin-left:auto;color:var(--s-ink3)"><svg class="si"><use href="#s-out"/></svg></a></div>
+  </div>
+</aside>
+{% if pg == 'notify' %}<script>
+(function(){
+  function mark(){ var h = location.hash || '#tg';
+    document.querySelectorAll('.side .nav[data-hash]').forEach(function(a){ a.classList.toggle('on', a.dataset.hash === h || (h === '#opt' && a.dataset.hash === '#tg')); }); }
+  mark(); window.addEventListener('hashchange', mark);
+})();
+</script>{% endif %}

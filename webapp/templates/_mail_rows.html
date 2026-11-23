@@ -1,0 +1,9 @@
+{% for r in mails %}
+<tr>
+  <td class="small">{{ r[1].strftime('%m-%d %H:%M') if r[1] else '' }}</td>
+  <td><span class="tag t-{{ r[5] or '미분류' }}">{{ cl(r[5]) if r[5] else '미분류' }}</span>{% if r[6] and r[6] != r[5] %}<div class="small muted">{{ r[6] }}</div>{% endif %}</td>
+  <td class="small">{{ r[2] or r[3] }}</td>
+  <td><a href="/mail/{{ r[0] }}"><b>{{ r[4] }}</b></a>{% if r[9] %} <span class="small muted">📎{{ r[9] }}</span>{% endif %}{% if r[8] %} <span class="small act">조치필요</span>{% endif %}
+    {% if r[7] and r[7] != r[4] %}<div class="small muted">{{ r[7] }}</div>{% endif %}</td>
+</tr>
+{% endfor %}

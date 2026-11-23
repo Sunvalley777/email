@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block body %}
+<div style="max-width:420px;margin:60px auto">
+  <div class="card">
+    <h2>그룹웨어 계정으로 로그인</h2>
+    <p class="muted small">다우오피스(그룹웨어)와 같은 ID·비밀번호를 사용합니다. 별도 회원가입은 없습니다.</p>
+    {% if msg %}<div class="msg {% if '않' in msg or '없' in msg or '실패' in msg %}err{% endif %}">{{ msg }}</div>{% endif %}
+    <form method="post" action="/login" autocomplete="on">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <p><label class="small muted">메일 주소 (또는 ID)</label><br>
+        <input type="text" name="email" placeholder="hong.gildong@z-tec.co.kr" required autofocus></p>
+      <p><label class="small muted">그룹웨어 비밀번호</label><br>
+        <input type="password" name="password" required></p>
+      <button class="btn" style="width:100%">로그인</button>
+    </form>
+  </div>
+  <p class="small muted" style="text-align:center">메일 내용은 사내 서버에서만 처리되며 외부 AI로 전송되지 않습니다.</p>
+</div>
+{% endblock %}

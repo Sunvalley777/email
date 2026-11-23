@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block body %}
+<p><a href="javascript:history.back()">← 목록으로</a></p>
+{% if msg %}<div class="msg">{{ msg }}</div>{% endif %}
+<div class="grid" style="grid-template-columns:2fr 1fr">
+  <div class="card">
+    <h2>{{ m[6] }}</h2>
+    <p class="small muted">{{ m[2] or '' }} &lt;{{ m[3] }}&gt; · {{ m[1].strftime('%Y-%m-%d %H:%M') if m[1] else '' }}<br>
+      받는 사람: {{ (m[4] or [])|join(', ') }}{% if m[5] %}<br>참조: {{ m[5]|join(', ') }}{% endif %}</p>
+    {% if m[17] %}
+    <div class="bodytabs">
+      <a href="#" data-v="html" class="on">🖼 원본 보기 (이미지 포함)</a>
+      <a href="#" data-v="text">📄 텍스트만</a>
+    </div>
+    <iframe id="mailhtml" src="/mail/{{ m[0] }}/html" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+            referrerpolicy="no-referrer" style="width:100%;min-height:320px;border:1px solid var(--line);border-radius:8px;background:#fff"></iframe>
+    <pre id="mailtext" style="display:none">{{ m[7] or '(텍스트 본문 없음 — 원본 보기에서 확인)' }}</pre>
+    <script>
+    (function(){
+      var f = document.getElementById('mailhtml'), t = document.getElementById('mailtext');
+      function fit(){ try { var d = f.contentDocument; f.style.height = Math.min(Math.max(d.documentElement.scrollHeight, d.body.scrollHeight) + 20, 4000) + 'px'; } catch(e) {} }
+      f.addEventListener('load', function(){ fit();
+        try { f.contentDocument.querySelectorAll('img').forEach(function(i){ i.addEventListener('load', fit); }); } catch(e) {} });
+      document.querySelectorAll('.bodytabs a').forEach(function(a){ a.addEventListener('click', function(e){
+        e.preventDefault(); var h = a.dataset.v === 'html';
+        f.style.display = h ? '' : 'none'; t.style.display = h ? 'none' : '';
+        document.querySelectorAll('.bodytabs a').forEach(function(x){ x.classList.toggle('on', x === a); }); }); });
+    })();
+    </script>
+    <style>.bodytabs{display:flex;gap:6px;margin:6px 0 8px}.bodytabs a{padding:5px 12px;border-radius:14px;border:1px solid var(--line);font-size:13px}
+    .bodytabs a.on{background:var(--pri);color:#fff;border-color:var(--pri)}.bodytabs a:hover{text-decoration:none}</style>
+    {% else %}
+    <pre>{{ m[7] or '(본문 없음)' }}</pre>
+    {% endif %}
+    {% if ocr and ocr[0] %}
+    <details class="ocrbox"><summary>🔤 이미지 속 글자 (OCR · 이미지 {{ ocr[1] }}장) <span class="small muted">— AI 분석에 사용, 오탈자 있을 수 있음</span></summary>
+      <pre style="margin-top:8px">{{ ocr[0] }}</pre></details>
+    <style>.ocrbox{margin:10px 0;padding:8px 12px;border:1px solid #fde68a;background:#fffbeb;border-radius:8px}.ocrbox summary{cursor:pointer;font-weight:600}</style>
+    {% endif %}
+    {% if atts %}<h2>📎 첨부파일</h2><table>
+      {% for a in atts %}<tr><td><a href="/att/{{ a[0] }}">{{ a[1] }}</a>{% if a[3] %} <span class="tag" style="--c:#b45309">DRM</span>{% endif %}</td>
+        <td class="small muted" style="width:90px">{{ ((a[2] or 0)/1024)|round(1) }} KB</td></tr>{% endfor %}
+    </table>{% endif %}
+  </div>
+  <div class="card">
+    <h2>🤖 AI 분석</h2>
+    <div class="digest" id="digest">
+      <div class="dg-head">
+        <b>✨ AI 요약 {% if dg_route == 'claude' %}<span class="tag" style="--c:#d97706">🌐 외부 Claude</span>{% else %}<span class="tag" style="--c:#0062B2">🔒 사내 AI</span>{% endif %}</b>
+        <button class="btn sm {{ 'redo' if digest else 'ai' }}" id="dg-btn" type="button" {{ 'disabled' if not (m[7] or (ocr and ocr[0])) }}>{{ '✨ 다시 정리' if digest else '✨ 자세히 정리' }}</button>
+      </div>
+      {% if digest %}
+        {% if digest.one_line %}<div class="dg-one">{{ digest.one_line }}</div>{% endif %}
+        {% if digest.points %}<div class="dg-t">주요 내용</div><ul>{% for x in digest.points %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+        {% if digest.todo %}<div class="dg-t" style="color:var(--warn)">내가 할 일</div><ul class="todo">{% for x in digest.todo %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+        {% if digest.dates %}<div class="dg-t">일정</div><ul>{% for x in digest.dates %}<li><b>{{ x.date }}</b> {{ x.what }}</li>{% endfor %}</ul>{% endif %}
+        {% if digest.figures %}<div class="dg-t">숫자·사양</div><ul>{% for x in digest.figures %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+        {% if digest.people %}<div class="dg-t">관련 담당자·기관</div><div class="small">{{ digest.people|join(' · ') }}</div>{% endif %}
+        <div class="small muted" style="margin-top:8px">{{ digest._at.strftime('%m-%d %H:%M') }} 정리 · {% if (digest._model or '').startswith('claude') %}외부 Claude({{ digest._model }}){% else %}사내 AI 서버({{ digest._model }}) · 외부 전송 없음{% endif %}</div>
+      {% else %}
+        {% if m[11] and m[11] != m[6] %}<div class="dg-one">{{ m[11] }}</div>{% elif not m[8] %}<div class="small muted">아직 AI 분석 전입니다 (수집 후 10~30분)</div>{% endif %}
+        {% if m[12] and m[13] %}<div class="dg-t" style="color:var(--warn)">내가 할 일</div><ul class="todo"><li>{{ m[13] }}{% if m[14] %} <span class="small">(마감 {{ m[14] }})</span>{% endif %}</li></ul>{% endif %}
+        {% if m[14] or m[15] %}<div class="dg-t">일정</div><ul>{% if m[14] %}<li><b>{{ m[14] }}</b> 마감</li>{% endif %}{% if m[15] %}<li><b>{{ m[15] }}</b> 행사·회의</li>{% endif %}</ul>{% endif %}
+        <p class="small muted" id="dg-hint" style="margin-top:10px">자동 분석 결과입니다. {% if m[7] or (ocr and ocr[0]) %}[자세히 정리]를 누르면 주요 내용 · 할 일 · 일정 · 숫자까지 정리합니다.<br>
+          {% if dg_route == 'claude' %}🌐 이 메일은 <b>외부 Claude</b>로 정리됩니다 (본문이 외부로 전송, 3~10초).
+          {% elif not dg_has_key %}🔒 사내 AI 서버로 정리합니다 (외부 전송 없음, 10~60초).
+          {% else %}🔒 사내업무·DRM 메일이라 <b>사내 AI</b>로만 정리합니다 (외부 전송 없음, 10~60초).{% endif %}{% else %}본문이 없어 정리할 수 없습니다.{% endif %}</p>
+      {% endif %}
+      <p class="small" id="dg-msg" style="display:none"></p>
+    </div>
+    {% if m[8] %}<table>
+      <tr><th>분류</th><td><span class="tag t-{{ m[8] }}">{{ cl(m[8]) }}</span> {{ m[9] or '' }}
+        {% if m[18] %}<span class="tag" style="--c:#b45309" title="사람이 고친 분류 — 일괄 재분류에서 바뀌지 않음">✋ 수동 확정</span>
+        {% elif urule %}<span class="tag" style="--c:#0369a1" title="내 분류 규칙으로 분류됨">📌 내 규칙: {{ urule[1] }}</span>{% endif %}</td></tr>
+      <tr><th>상대</th><td>{{ m[10] or '-' }}</td></tr>
+      <tr><th>조치</th><td>{% if m[12] %}<span class="act">필요</span>{% else %}<span class="muted">불필요</span>{% endif %}</td></tr>
+      <tr><th>마감</th><td>{{ m[14] or '-' }}</td></tr>
+      <tr><th>행사일</th><td>{{ m[15] or '-' }}</td></tr>
+      <tr><th>보안등급</th><td>{{ m[16] or '-' }}</td></tr>
+    </table>
+    {% else %}<p class="muted">아직 AI 분석 전입니다. (10~30분 이내 반영)</p>{% endif %}
+
+
+    <details class="fix" {{ 'open' if not m[8] }}>
+      <summary>✏️ 분류 수정 · 🔄 AI 다시 분석</summary>
+      <form method="post" action="/mail/{{ m[0] }}/classify">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <div class="fx">
+          <select name="category">{% for c in cats %}<option value="{{ c.code }}" {{ 'selected' if c.code == m[8] }}>{{ c.label }}</option>{% endfor %}</select>
+          <input type="text" name="subtype" value="{{ m[9] or '' }}" list="sublist" placeholder="세부분류 (선택)">
+          <datalist id="sublist">{% for x in subs %}<option value="{{ x }}">{% endfor %}</datalist>
+        </div>
+        <div class="small" style="margin:6px 0">
+          <label><input type="radio" name="remember" value="none" checked> 이 메일만</label><br>
+          <label><input type="radio" name="remember" value="from_addr"> 이 보낸 사람(<b>{{ m[3] }}</b>) 메일은 앞으로도</label><br>
+          <label><input type="radio" name="remember" value="from_domain"> 이 도메인(<b>@{{ (m[3] or '').split('@')[-1] }}</b>) 메일은 앞으로도</label>
+        </div>
+        <button class="btn sm">분류 저장</button>
+        <span class="small muted">수동 확정 → 일괄 재분류에서 보호</span>
+      </form>
+      <div style="border-top:1px dashed var(--line);margin-top:10px;padding-top:10px">
+        <button class="btn gray sm" id="re-btn" type="button">🔄 AI 다시 분석</button>
+        <span class="small muted" id="re-msg">현재 규칙·AI로 이 메일만 다시 분석 (10~60초{{ ' · 수동 확정 해제' if m[18] }})</span>
+      </div>
+    </details>
+
+    <p class="small muted">AI 결과는 참고용입니다. 원문을 꼭 확인하세요.</p>
+  </div>
+<style>
+.fix{margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fafbfc}
+.fix summary{cursor:pointer;font-weight:700;font-size:13px}
+.fix .fx{display:flex;gap:6px;margin-top:8px}.fix .fx select{width:130px}
+.btn.ai,.btn.redo{background:#E3EEFA;border:1px solid #B5D0EE;color:#00467F;font-weight:700;padding:7px 13px}
+.btn.ai:hover,.btn.redo:hover{background:#D3E4F7;border-color:#8DB6E3}
+.digest{margin:0 0 14px;padding:12px;border:1px solid #CFE2F5;background:#F1F7FD;border-radius:10px}
+.dg-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.btn.sm{padding:6px 12px;font-size:13px}.btn[disabled]{opacity:.5;cursor:default}
+.dg-one{font-weight:700;padding:8px 10px;background:#fff;border-left:4px solid var(--pri);border-radius:6px;margin:6px 0 4px;line-height:1.5}
+.dg-t{font-size:12px;font-weight:700;color:var(--pri);margin:10px 0 2px}
+.digest ul{margin:2px 0;padding-left:18px;line-height:1.55;font-size:13px}.digest ul.todo li{color:var(--warn);font-weight:600}
+</style>
+<script>
+(function(){
+  var b = document.getElementById('re-btn'), msg = document.getElementById('re-msg');
+  if (!b) return;
+  b.addEventListener('click', function(){
+    var t0 = Date.now(), tm;
+    b.disabled = true; msg.className = 'small muted';
+    tm = setInterval(function(){ msg.textContent = '⏳ AI가 다시 분석 중… ' + Math.round((Date.now()-t0)/1000) + '초'; }, 500);
+    var fd = new FormData(); fd.append('csrf', '{{ csrf }}');
+    fetch('/mail/{{ m[0] }}/reanalyze', {method:'POST', body:fd, credentials:'same-origin'})
+      .then(function(r){ return r.json(); }).then(function(d){
+        clearInterval(tm);
+        if (d.ok) { msg.textContent = '✅ 완료 (' + d.sec + '초)'; location.href = '/mail/{{ m[0] }}?msg=' + encodeURIComponent('AI가 다시 분석했습니다'); }
+        else { msg.className = 'small act'; msg.textContent = '⚠️ ' + (d.error || '실패'); b.disabled = false; }
+      }).catch(function(){ clearInterval(tm); msg.className = 'small act'; msg.textContent = '⚠️ 연결 실패'; b.disabled = false; });
+  });
+})();
+(function(){
+  var b = document.getElementById('dg-btn'), msg = document.getElementById('dg-msg');
+  if (!b) return;
+  b.addEventListener('click', function(){
+    var t0 = Date.now(), tm;
+    b.disabled = true; msg.style.display = 'block'; msg.className = 'small muted';
+    tm = setInterval(function(){ msg.textContent = '⏳ AI가 정리 중입니다… ' + Math.round((Date.now()-t0)/1000) + '초'; }, 500);
+    var fd = new FormData(); fd.append('csrf', '{{ csrf }}');
+    fetch('/mail/{{ m[0] }}/digest', {method:'POST', body:fd, credentials:'same-origin'})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        clearInterval(tm);
+        if (d.ok) { msg.textContent = '✅ 정리 완료 (' + d.sec + '초)' + (d.note ? ' · ' + d.note : ''); setTimeout(function(){ location.reload(); }, d.note ? 1500 : 0); }
+        else { msg.className = 'small act'; msg.textContent = '⚠️ ' + (d.error || '실패'); b.disabled = false; }
+      })
+      .catch(function(){ clearInterval(tm); msg.className = 'small act'; msg.textContent = '⚠️ 연결 실패 — 다시 시도하세요'; b.disabled = false; });
+  });
+})();
+</script>
+</div>
+{% endblock %}

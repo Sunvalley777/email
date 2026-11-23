@@ -1,0 +1,10 @@
+[Unit]
+Description=Z-TEC AI Mail Classifier (rules + Ollama)
+After=network-online.target docker.service ollama.service
+
+[Service]
+Type=oneshot
+User=redmine
+WorkingDirectory=/home/redmine/mail-collector/classifier
+ExecStart=/home/redmine/mail-collector/venv/bin/python classify.py
+TimeoutStartSec=3600

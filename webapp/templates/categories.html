@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block body %}
+<p><a href="/settings">← 내 수집 설정</a></p>
+{% if msg %}<div class="msg">{{ msg }}</div>{% endif %}
+{% if running and running[3] in ('queued','running') %}
+<div class="msg" id="jobmsg" data-job="{{ running[0] }}">🔄 개인 규칙을 기존 메일에 적용 중… <b id="jobp">{{ running[2] }} / {{ running[1] }}</b></div>
+{% endif %}
+
+<div class="grid" style="grid-template-columns:1fr 1.2fr">
+  <div class="card">
+    <h2>🗂 내 분류 이름·색·순서 <span class="small muted">화면 표시만 바뀜 · 재분류 불필요</span></h2>
+    <form method="post" action="/settings/categories/save">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <table>
+        <tr><th>회사 분류</th><th>내 화면 이름</th><th>색</th><th>순서</th><th>숨김</th></tr>
+        {% for c in cats_all %}
+        <tr>
+          <td class="small"><span class="tag" style="--c:{{ c.base_color }}">{{ c.base_label }}</span></td>
+          <td><input type="text" name="label_{{ c.code }}" value="{{ c.label }}" maxlength="20" placeholder="{{ c.base_label }}"></td>
+          <td><input type="color" name="color_{{ c.code }}" value="{{ c.color }}"></td>
+          <td><input type="number" name="sort_{{ c.code }}" value="{{ c.sort }}" min="1" max="99" style="width:56px"></td>
+          <td style="text-align:center"><input type="checkbox" name="hidden_{{ c.code }}" value="1" {{ 'checked' if c.hidden }}></td>
+        </tr>
+        {% endfor %}
+      </table>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn">저장</button>
+      </div>
+    </form>
+    <form method="post" action="/settings/categories/reset" style="margin-top:6px"><input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn gray sm">회사 기본값으로</button></form>
+    <p class="small muted">예: 영업 담당자는 '외부협력' → '고객·영업'. 숨긴 분류는 대시보드 칩·탭에서 빠지고, 메일은 '전체'에서 계속 보입니다. 알림 규칙은 내부 코드 기준이라 이름을 바꿔도 그대로 동작합니다.</p>
+  </div>
+
+  <div class="card">
+    <h2>📌 내 분류 규칙 <span class="small muted">회사 규칙보다 우선 · 내 메일에만 적용</span></h2>
+    <form method="post" action="/settings/rule/add" class="inline" id="ruleform">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <select name="match_type" style="width:130px">{% for k, v in match_types.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+      <input type="text" name="pattern" placeholder="예: abc-corp.com / hong@abc.com / 견적" required>
+      <span>→</span>
+      <select name="category" style="width:120px">{% for c in cats_all %}<option value="{{ c.code }}">{{ c.label }}</option>{% endfor %}</select>
+      <input type="text" name="subtype" placeholder="세부분류(선택)" style="width:120px">
+      <button class="btn sm">추가</button>
+    </form>
+    <table>
+      <tr><th>조건</th><th>분류</th><th>적용</th><th></th></tr>
+      {% for r in rules %}
+      <tr><td><span class="small muted">{{ match_types.get(r[1], r[1]) }}</span> <b>{{ r[2] }}</b></td>
+        <td><span class="tag t-{{ r[3] }}">{{ cl(r[3]) }}</span>{% if r[4] %} <span class="small">· {{ r[4] }}</span>{% endif %}</td>
+        <td class="small muted">{{ r[5] }}건</td>
+        <td><form method="post" action="/settings/rule/{{ r[0] }}/delete" style="margin:0"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn gray sm">삭제</button></form></td></tr>
+      {% else %}<tr><td colspan="4" class="muted small">규칙이 없습니다. 메일 화면에서 분류를 고칠 때 '앞으로도 이 분류로'를 고르면 자동으로 만들어집니다.</td></tr>{% endfor %}
+    </table>
+
+    <h2 style="margin-top:18px">🏷 내 세부분류 <span class="small muted">키워드가 제목·본문에 있으면 지정</span></h2>
+    <form method="post" action="/settings/subtype/add" class="inline" id="subform">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <select name="category" style="width:120px">{% for c in cats_all %}<option value="{{ c.code }}">{{ c.label }}</option>{% endfor %}</select>
+      <span>›</span>
+      <input type="text" name="name" placeholder="이름 (예: A사 프로젝트)" style="width:150px" required>
+      <input type="text" name="keywords" placeholder="키워드 (쉼표 = 또는)" required>
+      <button class="btn sm">추가</button>
+    </form>
+    <table>
+      {% for s in subs %}
+      <tr><td><span class="tag t-{{ s[1] }}">{{ cl(s[1]) }}</span> › <b>{{ s[2] }}</b></td><td class="small muted">{{ s[3] }}</td>
+        <td><form method="post" action="/settings/subtype/{{ s[0] }}/delete" style="margin:0"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn gray sm">삭제</button></form></td></tr>
+      {% else %}<tr><td class="muted small">세부분류가 없습니다. (AI가 정한 세부분류는 그대로 사용)</td></tr>{% endfor %}
+    </table>
+
+    <div class="exwrap">
+      <button type="button" class="btn gray sm" id="exbtn">📖 작성 예시 보기</button>
+      <span class="small muted">예시 줄을 누르면 위 입력칸에 채워집니다 (주소·도메인은 실제 값으로 바꾸세요)</span>
+      <div id="expanel" style="display:none">
+        <div class="ext">📌 내 분류 규칙 예시</div>
+        <table class="ex">
+          <tr><th>조건</th><th>입력값</th><th>분류</th><th>세부분류</th><th>쓰임새</th></tr>
+          {% set rex = [
+            ('from_domain','abc-display.co.kr','외부협력','','주요 고객사 메일 모으기 (세부분류는 비워 두고 아래 세부분류로 나눔)'),
+            ('from_domain','kumoh.ac.kr','외부협력','산학협력','대학 교수 메일'),
+            ('from_domain','etri.re.kr','정부과제','ETRI 협력','공공연구기관을 정부과제로'),
+            ('from_addr','pm.kim@keit.re.kr','정부과제','과제관리','담당 PM 메일만 구분'),
+            ('from_addr','noreply@srome.keit.re.kr','시스템알림','','과제관리 시스템 자동 메일'),
+            ('subject','견적','외부협력','영업·견적','제목에 \'견적\'이 있으면'),
+            ('subject','반출 승인','시스템알림','반출','사내 반출 승인 알림'),
+            ('subject','연구노트','사내업무','연구노트','연구노트 관련 공지')] %}
+          {% for mt, pat, cat, sub, why in rex %}
+          <tr class="pick" data-mt="{{ mt }}" data-pat="{{ pat }}" data-cat="{{ cat }}" data-sub="{{ sub }}">
+            <td class="small">{{ match_types[mt] }}</td><td><code>{{ pat }}</code></td>
+            <td><span class="tag t-{{ cat }}">{{ cl(cat) }}</span></td><td class="small">{{ sub }}</td><td class="small muted">{{ why }}</td></tr>
+          {% endfor %}
+        </table>
+        <ul class="small muted tips">
+          <li><b>보낸 주소</b>: 주소 전체를 정확히 · <b>보낸 도메인</b>: @ 뒤만 (하위 도메인 포함: keit.re.kr → srome.keit.re.kr 도 해당)</li>
+          <li><b>제목 키워드</b>: 단어 하나만 (여러 개면 규칙을 여러 개) · 규칙끼리 겹치면 <b>먼저 만든 규칙</b> 적용</li>
+        </ul>
+
+        <div class="ext">🏷 내 세부분류 예시 <span class="small muted">— 키워드는 쉼표(,)로 구분, 하나라도 제목·본문에 있으면 지정</span></div>
+        <table class="ex">
+          <tr><th>분류</th><th>이름</th><th>키워드</th></tr>
+          {% set sex = [
+            ('정부과제','수요조사','수요조사, 기술수요, 수요 조사'),
+            ('정부과제','공고·신청','공고, 신청 접수, 모집, 공모'),
+            ('정부과제','협약·정산','협약, 정산, 사업비, 연차보고'),
+            ('정부과제','드론 과제','드론, 무인기, UAV, VTOL'),
+            ('외부협력','견적·발주','견적, 발주, PO, 단가'),
+            ('외부협력','AS·불량','AS, 불량, 고장, 수리, 클레임'),
+            ('외부협력','장비 사양','사양서, 스펙, 검사 조건, 사양 확인'),
+            ('사내업무','회의','회의, 미팅, 주간보고'),
+            ('사내업무','결재','결재, 품의, 승인 요청'),
+            ('뉴스레터','AI 동향','AI, 인공지능, LLM, 생성형')] %}
+          {% for cat, name, kw in sex %}
+          <tr class="pick2" data-cat="{{ cat }}" data-name="{{ name }}" data-kw="{{ kw }}">
+            <td><span class="tag t-{{ cat }}">{{ cl(cat) }}</span></td><td><b>{{ name }}</b></td><td class="small">{{ kw }}</td></tr>
+          {% endfor %}
+        </table>
+        <div class="combo small">
+          <b>💡 같이 쓰기</b> — 규칙 <code>보낸 도메인 abc-display.co.kr → 외부협력</code> (세부분류 비움) +
+          세부분류 <code>외부협력 › 견적·발주</code>, <code>외부협력 › AS·불량</code>
+          → ABC사 메일이 외부협력 안에서 <b>견적·발주 / AS·불량</b>으로 자동으로 나뉨.
+          <span class="muted">규칙의 세부분류 칸을 채우면 그 값이 우선합니다.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>✏️ 최근 내가 고친 분류 <span class="small muted">관리자가 회사 공통 규칙을 개선하는 데 참고합니다 (보낸 도메인·분류만, 내용은 공유 안 됨)</span></h2>
+  <table>
+    {% for x in corr %}
+    <tr><td class="small" style="width:90px">{{ x[0].strftime('%m-%d %H:%M') }}</td>
+      <td><a href="/mail/{{ x[5] }}">{{ (x[1] or '')[:60] }}</a></td>
+      <td class="small" style="width:260px">{% if x[2] %}<span class="tag t-{{ x[2] }}">{{ cl(x[2]) }}</span>{% else %}미분류{% endif %} → <span class="tag t-{{ x[3] }}">{{ cl(x[3]) }}</span>{% if x[4] %} · {{ x[4] }}{% endif %}</td></tr>
+    {% else %}<tr><td class="muted small">아직 고친 분류가 없습니다.</td></tr>{% endfor %}
+  </table>
+</div>
+
+<style>
+.exwrap{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)}
+.ext{font-weight:700;font-size:13px;color:var(--pri);margin:14px 0 6px}
+table.ex td,table.ex th{padding:6px}table.ex tr.pick td:nth-child(-n+4){white-space:nowrap}table.ex tr.pick,table.ex tr.pick2{cursor:pointer}
+table.ex tr.pick:hover td,table.ex tr.pick2:hover td{background:#EEF4FB}
+table.ex code{background:#f1f5f9;padding:1px 5px;border-radius:4px}
+.tips{margin:6px 0 0;padding-left:18px;line-height:1.6}
+.combo{margin-top:10px;padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;line-height:1.7}
+.combo code{background:#fff;padding:1px 5px;border-radius:4px}
+.flash{animation:fl 1.2s}@keyframes fl{0%{box-shadow:0 0 0 3px #f59e0b}100%{box-shadow:none}}
+form.inline{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+form.inline input[type=text]{flex:1;min-width:120px}form.inline select{width:auto!important}
+.btn.sm{padding:5px 10px;font-size:12px}
+input[type=color]{width:42px;height:30px;border:1px solid var(--line);border-radius:6px;padding:2px;background:#fff}
+</style>
+<script>
+(function(){
+  var b = document.getElementById('exbtn'), p = document.getElementById('expanel');
+  b.addEventListener('click', function(){
+    var open = p.style.display === 'none';
+    p.style.display = open ? '' : 'none';
+    b.textContent = open ? '📖 작성 예시 닫기' : '📖 작성 예시 보기';
+  });
+  function fill(form, vals){
+    Object.keys(vals).forEach(function(k){ var el = form.querySelector('[name=' + k + ']'); if (el) el.value = vals[k]; });
+    form.scrollIntoView({behavior:'smooth', block:'center'});
+    form.classList.remove('flash'); void form.offsetWidth; form.classList.add('flash');
+  }
+  document.querySelectorAll('tr.pick').forEach(function(tr){ tr.addEventListener('click', function(){
+    fill(document.getElementById('ruleform'), {match_type: tr.dataset.mt, pattern: tr.dataset.pat, category: tr.dataset.cat, subtype: tr.dataset.sub});
+  }); });
+  document.querySelectorAll('tr.pick2').forEach(function(tr){ tr.addEventListener('click', function(){
+    fill(document.getElementById('subform'), {category: tr.dataset.cat, name: tr.dataset.name, keywords: tr.dataset.kw});
+  }); });
+})();
+</script>
+{% if running and running[3] in ('queued','running') %}
+<script>
+(function(){
+  var m = document.getElementById('jobmsg'), p = document.getElementById('jobp');
+  var t = setInterval(function(){
+    fetch('/api/job/' + m.dataset.job, {credentials:'same-origin'}).then(function(r){ return r.json(); }).then(function(d){
+      p.textContent = d.done + ' / ' + d.total + (d.changed ? ' · 바뀐 분류 ' + d.changed + '건' : '');
+      if (d.status !== 'running' && d.status !== 'queued') { clearInterval(t); m.innerHTML = '✅ 기존 메일 적용 완료 · 바뀐 분류 <b>' + d.changed + '건</b>'; }
+    });
+  }, 2500);
+})();
+</script>
+{% endif %}
+{% endblock %}

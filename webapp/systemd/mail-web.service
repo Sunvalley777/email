@@ -1,0 +1,13 @@
+[Unit]
+Description=Z-TEC AI Mail Assistant Web (pilot)
+After=network-online.target docker.service
+
+[Service]
+User=redmine
+WorkingDirectory=/home/redmine/mail-collector/webapp
+ExecStart=/home/redmine/mail-collector/venv/bin/uvicorn app:app --host 0.0.0.0 --port 8443 --workers 1 --ssl-keyfile certs/key.pem --ssl-certfile certs/cert.pem
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

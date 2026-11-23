@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block body %}
+<div style="max-width:720px;margin:30px auto">
+<div class="card">
+  <h2>AI 메일 비서 이용 동의 <span class="small muted">({{ version }})</span></h2>
+  <table>
+    <tr><th style="width:140px">수집 항목</th><td>본인 그룹웨어 메일함의 <b>받은편지함·보낸편지함</b> 메일 본문, 첨부파일</td></tr>
+    <tr><th>수집 방식</th><td>사내 서버가 5분마다 <b>읽기 전용</b>으로 가져옵니다. 메일 삭제·이동·읽음 표시는 바뀌지 않습니다.</td></tr>
+    <tr><th>AI 처리</th><td>사내 서버의 로컬 AI(Ollama)로 분류·요약·마감일 추출. <b>외부 클라우드 AI로 전송하지 않습니다.</b></td></tr>
+    <tr><th>비밀번호</th><td>메일 수집을 위해 그룹웨어 비밀번호를 <b>암호화하여</b> 사내 서버에 보관합니다.</td></tr>
+    <tr><th>열람 범위</th><td>본인만 열람할 수 있습니다. 관리자는 수집 건수·오류 현황만 볼 수 있고 메일 내용은 볼 수 없습니다.</td></tr>
+    <tr><th>보관·철회</th><td>[내 수집 설정]에서 언제든 수집 중지(비밀번호 삭제) 또는 데이터 전체 삭제가 가능합니다.</td></tr>
+    <tr><th>성격</th><td>희망자 대상 파일럿이며, 동의하지 않아도 업무상 불이익은 없습니다.</td></tr>
+  </table>
+  <form method="post" action="/consent" style="margin-top:18px">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <p><label class="small muted">표시 이름 (선택)</label><br><input type="text" name="name" placeholder="홍길동"></p>
+    <button class="btn" name="agree" value="yes">동의하고 시작</button>
+    <button class="btn gray" name="agree" value="no">동의하지 않음</button>
+  </form>
+</div>
+</div>
+{% endblock %}

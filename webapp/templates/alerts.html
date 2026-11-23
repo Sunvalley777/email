@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block body %}
+<style>.st{width:84px;text-align:center;white-space:nowrap}.st-ok{color:#2E8B57}.st-wait{color:#8a6d00}.st-bad{color:#C0392B;font-weight:600}.st-off{color:#999}.tglink{color:#E41439;text-decoration:none;border-bottom:1px dashed #F7C9D2}.tglink:hover{color:#0062B2;border-color:#0062B2;text-decoration:none}.tglink2{color:inherit;border-bottom:1px dashed #ccc}.tglink2:hover{color:#0062B2;border-color:#0062B2;text-decoration:none}</style>
+<div class="grid" style="grid-template-columns:2fr 1fr">
+<div class="card">
+  <h2>🔔 알림센터 <span class="small muted">읽지 않음 {{ unread }}건</span></h2>
+  <div class="filters">
+    <a href="/alerts" class="{{ 'on' if show != 'unread' }}">전체</a>
+    <a href="/alerts?show=unread" class="{{ 'on' if show == 'unread' }}">읽지 않음</a>
+    <form method="post" action="/alerts/read-all" style="margin-left:auto"><input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn gray" {{ 'disabled' if not unread }}>모두 읽음</button></form>
+  </div>
+  <div class="small" style="margin:6px 0 10px">
+    📱 텔레그램:
+    {% if tg_linked %}<b style="color:#2E8B57">연결됨</b>
+      · 전송 {{ stats.sent }} · 대기 {{ stats.wait }}{% if stats.bad %} · <b style="color:#C0392B">실패·만료 {{ stats.bad }}</b>{% endif %}
+      {% if quiet %} · <span style="color:#8a6d00">🌙 지금은 조용한 시간 {{ quiet }}</span>{% endif %}
+    {% else %}<a href="/notify" class="tglink" title="텔레그램 연결 화면으로 이동"><b>미연결</b> → 지금 연결하기</a>{% endif %}
+  </div>
+  <table>
+    <tr class="small muted"><td>시각</td><td>알림</td><td>규칙</td><td style="text-align:center">📱 텔레그램</td><td style="text-align:center">💻 PC</td></tr>
+    {% for it in items %}{% set r = it.r %}
+    <tr class="{{ 'unread' if not r[6] }}">
+      <td class="small" style="width:95px">{{ r[1].strftime('%m-%d %H:%M') }}</td>
+      <td><a href="/alerts/open/{{ r[0] }}"><b>{{ r[3] }}</b></a>
+        <div class="small muted" style="white-space:pre-line">{{ r[4] or '' }}</div>
+        {% if it.tg[0] == 'bad' %}<div class="small" style="color:#C0392B">{{ it.tg[2] }}</div>{% endif %}</td>
+      <td class="small muted" style="width:130px">{{ r[5] or ('마감 리마인드' if r[2].startswith('remind') else '') }}</td>
+      <td class="small st st-{{ it.tg[0] }}" title="{{ it.tg[2] }}">{% if it.tg[1].endswith('미연결') and not tg_linked %}<a href="/notify" class="tglink2" title="텔레그램 연결 화면으로 이동">{{ it.tg[1] }}</a>{% else %}{{ it.tg[1] }}{% endif %}</td>
+      <td class="small st st-{{ it.pc[0] }}" title="{{ it.pc[2] }}">{{ it.pc[1] }}</td>
+    </tr>
+    {% else %}<tr><td colspan="5" class="muted small">알림이 없습니다. 규칙은 [알림 규칙·연결]에서 관리합니다.</td></tr>{% endfor %}
+  </table>
+</div>
+<div>
+  <div class="card">
+    <h2>💻 PC 바탕화면 알림</h2>
+    <p class="small">PC에 작은 알림 프로그램을 설치하면, 새 알림이 Windows 바탕화면 오른쪽 아래에 표시됩니다. (사내망 전용, 1분 주기)</p>
+    {% if pc and pc[0] %}
+      <p><span class="tag" style="--c:#2E8B57">설정됨</span>
+        <span class="small muted">마지막 접속 {{ pc[1].strftime('%m-%d %H:%M') if pc[1] else '아직 없음' }}</span></p>
+      <form method="post" action="/notify/pc-token" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn gray">토큰 재발급</button></form>
+      <form method="post" action="/notify/pc-token/revoke" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn red">해제</button></form>
+    {% else %}
+      <form method="post" action="/notify/pc-token"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn">PC 알림 토큰 발급</button></form>
+    {% endif %}
+    <ol class="small" style="line-height:1.8;padding-left:18px;margin-top:12px">
+      <li>토큰 발급 (한 번만 표시됨)</li>
+      <li>PC에서 <code>ztec_alert_setup.ps1</code> 실행 → 토큰 붙여넣기</li>
+      <li>로그인할 때마다 자동 실행</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h2>📌 알림 경로</h2>
+    <table class="small">
+      <tr><td>🔔 웹 알림센터</td><td>항상 (이 화면 · 상단 배지)</td></tr>
+      <tr><td>💻 PC 바탕화면</td><td>PC 프로그램 설치 시</td></tr>
+      <tr><td>📱 텔레그램</td><td>연결 시 · 조용한 시간 제외</td></tr>
+    </table>
+    <p class="small muted">상태에 마우스를 올리면 자세한 사유가 보입니다.<br>사내 알림에는 메일 제목이 포함되고, 텔레그램(외부)은 [알림 규칙·연결]의 보낼 내용 수준을 따릅니다.</p>
+  </div>
+</div>
+</div>
+{% endblock %}

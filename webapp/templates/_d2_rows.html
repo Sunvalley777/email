@@ -1,0 +1,21 @@
+{% set ns = namespace(g=last_group or '') %}
+{% for it in rows %}{% set r = it.r %}
+{% if it.g != ns.g %}<div class="grp">{{ it.g }}</div>{% set ns.g = it.g %}{% endif %}
+<div class="row" data-id="{{ r[0] }}" data-g="{{ it.g }}" tabindex="-1">
+  <div class="ud{{ ' on' if r[8] }}"></div>
+  <div class="rc">
+    <div class="from">{{ r[2] or r[3] }}{% if r[12] and r[12] != r[2] %} <span class="org">{{ r[12] }}</span>{% endif %}</div>
+    <div class="subj">{{ r[4] or '(제목 없음)' }}</div>
+    {% if r[7] and r[7] != r[4] %}<div class="ai"><svg class="i"><use href="#spark"/></svg>{{ r[7] }}</div>{% endif %}
+    <div class="meta">
+      {% if r[5] %}<span class="chip"><span class="dot t-{{ r[5] }}"></span>{{ cl(r[5]) }}{% if r[6] and r[6] != r[5] %} · {{ r[6] }}{% endif %}</span>
+      {% else %}<span class="chip">미분류</span>{% endif %}
+      {% if r[8] %}<span class="chip act">조치 필요</span>{% endif %}
+      {% if r[10] and r[10] >= today %}{% set d = (r[10] - today).days %}<span class="chip {{ 'dl' if d <= 7 else 'dl2' }}">{{ 'D-day' if d == 0 else 'D-' ~ d }} · {{ r[10].strftime('%m-%d') }}</span>{% endif %}
+      {% if r[11] and r[11] >= today %}<span class="chip ev">📅 {{ r[11].strftime('%m-%d') }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="time">{% if r[1] %}{{ r[1].strftime('%H:%M') if it.g == '오늘' else r[1].strftime('%m-%d') }}{% endif %}
+    {% if r[9] %}<div><svg class="i sm"><use href="#clip"/></svg></div>{% endif %}</div>
+</div>
+{% endfor %}

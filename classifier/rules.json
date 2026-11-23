@@ -1,0 +1,74 @@
+{
+  "_설명": "위에서부터 판정: 시스템알림 제목 → 사내도메인 → 홍보성 제목 → 정부기관 → 뉴스레터 도메인/헤더 → 대학 → 기타 외부. 수정 후 classify.py --reset",
+  "internal_domains": [
+    "z-tec.co.kr"
+  ],
+  "gov_domains": [
+    "keit.re.kr",
+    "ketep.re.kr",
+    "gbtp.or.kr",
+    "kiro.re.kr",
+    "iitp.kr",
+    "kiat.or.kr",
+    "tipa.or.kr",
+    "nipa.kr",
+    "smtech.go.kr",
+    "ntis.go.kr",
+    "kotra.or.kr",
+    "kosmes.or.kr",
+    "nrf.re.kr",
+    "kiet.re.kr",
+    "kocca.kr",
+    "kdmi.kr"
+  ],
+  "gov_suffixes": [
+    ".go.kr",
+    ".re.kr"
+  ],
+  "newsletter_domains": [
+    "send.stibee.com",
+    "stibee.com",
+    "mail.anthropic.com",
+    "coex.co.kr",
+    "slexn.com",
+    "enerzai.com",
+    "dmkglobal.co.kr",
+    "mailchimp.com",
+    "sendgrid.net",
+    "newsletter.co.kr"
+  ],
+  "newsletter_from_keywords": [
+    "noreply",
+    "no-reply",
+    "newsletter",
+    "news@",
+    "marketing"
+  ],
+  "university_suffixes": [
+    ".ac.kr",
+    ".edu"
+  ],
+  "system_subject_patterns": [
+    "Querantine Report",
+    "Quarantine Report",
+    "Spam Report",
+    "외부 반출 승인",
+    "반출 승인 알림",
+    "결재 알림",
+    "결재요청 알림",
+    "비밀번호 변경",
+    "보안 링크"
+  ],
+  "promo_subject_patterns": [
+    "(광고)",
+    "[광고]",
+    "소식지",
+    "뉴스레터",
+    "Newsletter",
+    "Stay Connected",
+    "웨비나",
+    "Webinar",
+    "플랫폼 소개",
+    "구독"
+  ]
+}
