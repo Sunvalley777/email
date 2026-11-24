@@ -17,6 +17,6 @@ Write-Host "[2/3] 서버로 전송" -ForegroundColor Cyan
 scp $Tmp "${Server}:~/mail_deploy.tar"
 if ($LASTEXITCODE -ne 0) { Write-Host "전송 실패" -ForegroundColor Red; exit 1 }
 
-Write-Host "[3/3] 서버에서 풀기 + 웹 앱 재시작 (sudo 비밀번호를 물으면 서버 계정 비밀번호 입력)" -ForegroundColor Cyan
-ssh -t $Server "cd ~/mail-collector && rm -rf collector && tar -xf ~/mail_deploy.tar && cp -r collector/. . && rm -rf collector ~/mail_deploy.tar && find . -name '*.sh' -not -path './venv/*' -exec sed -i 's/\r$//' {} + && ./venv/bin/pip install -q -r requirements.txt -r webapp/requirements.txt && ./venv/bin/python notifier/notifier.py --init-db && echo '  배포 완료 (패키지·DB 스키마 확인 포함)' && sudo systemctl restart mail-web && echo -n '  mail-web: ' && systemctl is-active mail-web"
+Write-Host "[3/3] 서버에서 풀기 + 웹 앱 재시작 (sudoers 설정 시 비밀번호 없음)" -ForegroundColor Cyan
+ssh -t $Server "cd ~/mail-collector && rm -rf collector && tar -xf ~/mail_deploy.tar && cp -r collector/. . && rm -rf collector ~/mail_deploy.tar && find . -name '*.sh' -not -path './venv/*' -exec sed -i 's/\r$//' {} + && ./venv/bin/pip install -q -r requirements.txt -r webapp/requirements.txt && ./venv/bin/python notifier/notifier.py --init-db && echo '  배포 완료 (패키지·DB 스키마 확인 포함)' && (sudo -n systemctl restart mail-web 2>/dev/null || (echo '  [안내] 비밀번호 없는 재시작 설정이 안 되어 있어 sudo 비밀번호를 묻습니다' && sudo systemctl restart mail-web)) && echo -n '  mail-web: ' && systemctl is-active mail-web"
 Remove-Item $Tmp -ErrorAction SilentlyContinue
