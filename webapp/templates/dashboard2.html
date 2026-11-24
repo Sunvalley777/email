@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko"><head>
-<meta charset="utf-8"><script>(function(){try{var t=localStorage.getItem('ztec_theme');}catch(e){}document.documentElement.setAttribute('data-theme', t || 'autumn');})();</script><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><script>(function(){try{var t=localStorage.getItem('ztec_theme_v2');}catch(e){}document.documentElement.setAttribute('data-theme', t || 'winter');})();</script><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ title }} · 지텍 메일 비서</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -158,13 +158,15 @@ pre.pane{white-space:pre-wrap;word-break:break-word;font-family:inherit;font-siz
 .ph .k{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:4px;padding:0 6px;font-size:11px;margin:0 2px}
 .toast{position:fixed;right:20px;bottom:20px;background:var(--ink);color:#fff;padding:10px 14px;border-radius:9px;font-size:12.5px;box-shadow:0 6px 20px rgba(0,0,0,.18);display:none;z-index:10}
 
-/* ── 배경 테마: 가을 ── */
+/* ── 배경 테마: 겨울·가을 ── */
 html[data-theme=autumn] body{background:#F3E6D3 url(/theme/autumn.svg) center bottom/cover fixed}
-html[data-theme=autumn] .app{padding:10px;gap:10px;height:100vh;box-sizing:border-box}
-html[data-theme=autumn] .side{border-radius:16px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-html[data-theme=autumn] .list{border-radius:16px;border:0;overflow:hidden;box-shadow:0 4px 20px rgba(60,40,20,.12)}
-html[data-theme=autumn] .read{border-radius:16px;overflow:hidden;background:rgba(246,246,246,.84);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(60,40,20,.12)}
-html[data-theme=autumn] .split{right:-9px}
+html[data-theme=winter] body{background:#DCEAF7 url(/theme/winter.svg) center bottom/cover fixed}
+html[data-theme=winter] .side{background:rgba(255,255,255,.82)!important}
+:is([data-theme=autumn],[data-theme=winter]) .app{padding:10px;gap:10px;height:100vh;box-sizing:border-box}
+:is([data-theme=autumn],[data-theme=winter]) .side{border-radius:16px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+:is([data-theme=autumn],[data-theme=winter]) .list{border-radius:16px;border:0;overflow:hidden;box-shadow:0 4px 20px rgba(60,40,20,.12)}
+:is([data-theme=autumn],[data-theme=winter]) .read{border-radius:16px;overflow:hidden;background:rgba(246,246,246,.84);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(60,40,20,.12)}
+:is([data-theme=autumn],[data-theme=winter]) .split{right:-9px}
 @media (max-width:1100px){.split{display:none}.app{grid-template-columns:200px 1fr}.read{display:none}.app.reading .list{display:none}.app.reading .read{display:flex}}
 </style></head>
 <body>

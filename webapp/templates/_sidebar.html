@@ -76,7 +76,7 @@
 
   <div class="foot">
     <a class="nav {{ 'on' if pg == 'old' }}" href="/dashboard" title="이전 대시보드 화면 (비교용으로 당분간 유지)"><svg class="si"><use href="#s-layout"/></svg>기존 화면</a>
-    <a class="nav" href="#" id="themeBtn" title="배경 테마 바꾸기 (이 PC 브라우저에 기억)"><span style="width:16px;text-align:center">🍁</span><span id="themeName">배경: 가을</span></a>
+    <a class="nav" href="#" id="themeBtn" title="배경 테마 바꾸기: 겨울 → 가을 → 기본 (이 PC 브라우저에 기억)"><span id="themeIco" style="width:16px;text-align:center">❄️</span><span id="themeName">배경: 겨울</span></a>
     {% set acct = sb.acct %}
     <div class="me"><div class="av">{{ ((acct[2] if acct else '') or me)[:1] }}</div>
       <div style="min-width:0"><b>{{ (acct[2] if acct else '') or me.split('@')[0] }}</b>
@@ -86,13 +86,14 @@
 </aside>
 <script>
 (function(){
-  var T = [['autumn','배경: 가을'],['none','배경: 기본']], b = document.getElementById('themeBtn'), n = document.getElementById('themeName');
-  function cur(){ return document.documentElement.getAttribute('data-theme') || 'autumn'; }
-  function show(){ var c = cur(); n.textContent = (T.find(function(x){ return x[0] === c; }) || T[0])[1]; }
+  var T = [['winter','배경: 겨울','❄️'],['autumn','배경: 가을','🍁'],['none','배경: 기본','◻️']],
+      b = document.getElementById('themeBtn'), n = document.getElementById('themeName'), ic = document.getElementById('themeIco');
+  function cur(){ return document.documentElement.getAttribute('data-theme') || 'winter'; }
+  function show(){ var c = cur(), t = T.find(function(x){ return x[0] === c; }) || T[0]; n.textContent = t[1]; ic.textContent = t[2]; }
   show();
   b.addEventListener('click', function(e){ e.preventDefault();
     var i = T.findIndex(function(x){ return x[0] === cur(); }), next = T[(i + 1) % T.length][0];
-    document.documentElement.setAttribute('data-theme', next); try { localStorage.setItem('ztec_theme', next); } catch(e){}
+    document.documentElement.setAttribute('data-theme', next); try { localStorage.setItem('ztec_theme_v2', next); } catch(e){}
     show(); });
 })();
 </script>
