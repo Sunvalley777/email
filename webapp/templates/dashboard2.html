@@ -44,24 +44,27 @@ body.resizing{cursor:col-resize;user-select:none}body.resizing iframe{pointer-ev
 /* 목록 */
 .list{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0;min-height:0;position:relative}
 .lhead{padding:14px 16px 0;border-bottom:1px solid var(--line2)}
-.search{display:flex;align-items:center;gap:8px;background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:0 10px;color:var(--ink3)}
+.search{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #C9CED6;border-radius:9px;padding:0 10px;color:#6B7280;box-shadow:0 1px 2px rgba(20,25,35,.04)}
 .search input{flex:1;border:0;background:transparent;padding:8px 0;font:inherit;color:var(--ink);outline:none;min-width:0}
-.search:focus-within{border-color:var(--acc);background:#fff}
+.search:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px #DCEAF8}
 .kbd{font-size:10.5px;border:1px solid var(--line);background:#fff;border-radius:4px;padding:0 5px;color:var(--ink3);white-space:nowrap}
 .brief{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
-.bc{border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff;display:block}
-.bc:hover{border-color:#cfcfc8}
-.bc .k{font-size:11px;color:var(--ink3);display:flex;align-items:center;gap:5px}
+.bc{border:1px solid #D9DDE3;border-left:4px solid var(--bc,#9AA1AB);border-radius:9px;padding:8px 10px 8px 11px;background:#fff;display:block;box-shadow:0 1px 2px rgba(20,25,35,.05);transition:box-shadow .15s,transform .15s}
+.bc.k1{--bc:#E41439}.bc.k2{--bc:#C2410C}.bc.k3{--bc:#0062B2}
+.bc.on{background:#F4F8FD;border-color:var(--bc);box-shadow:0 0 0 1px var(--bc) inset}
+.bc:hover{box-shadow:0 4px 12px rgba(20,25,35,.10);transform:translateY(-1px);text-decoration:none}
+.bc .k{font-size:11.5px;color:#4B5160;font-weight:600;display:flex;align-items:center;gap:5px}
+.bc .k svg{color:var(--bc)}
 .bc .v{font-family:var(--num);font-size:19px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
 .bc .v small{font-size:11px;color:var(--ink3);font-weight:500;margin-left:4px}
-.bc.hot .v{color:var(--red)}
+.bc.hot .v{color:var(--red)}.bc .v{color:var(--ink)}
 .ltitle{display:flex;align-items:baseline;gap:8px;margin-top:14px}
 .ltitle h2{font-size:15px;margin:0}.ltitle .c{color:var(--ink3);font-size:12px}
 .ltitle .clr{margin-left:auto;font-size:12px;color:var(--ink3)}.ltitle .clr:hover{color:var(--ink)}
 .tabs{display:flex;gap:2px;margin-top:8px;align-items:center}
-.tab{padding:8px 10px;color:var(--ink3);font-weight:500;border-bottom:2px solid transparent;display:flex;gap:5px;align-items:center;margin-bottom:-1px}
+.tab{padding:8px 12px;color:#6B7280;font-weight:600;border-bottom:2px solid transparent;display:flex;gap:5px;align-items:center;margin-bottom:-1px}
 .tab:hover{color:var(--ink)}
-.tab.on{color:var(--ink);border-color:var(--ink);font-weight:600}
+.tab.on{color:var(--acc);border-color:var(--acc);font-weight:700}
 .tab .n{font-size:11px;color:var(--ink3)}
 .per{margin-left:auto;display:flex;align-items:center;gap:4px;color:var(--ink3);font-size:12px}
 .per select{border:0;background:transparent;font:inherit;color:var(--ink2);cursor:pointer;padding:4px 2px}
@@ -90,14 +93,16 @@ body.resizing{cursor:col-resize;user-select:none}body.resizing iframe{pointer-ev
 .empty{padding:60px 20px;text-align:center;color:var(--ink3)}
 /* 읽기 창 */
 .read{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
-.rbar{display:flex;align-items:center;gap:6px;padding:10px 22px;border-bottom:1px solid var(--line);background:var(--panel)}
-.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 10px;font-size:12.5px;color:var(--ink2);font-weight:500}
-.btn:hover{border-color:#cfcfc8;color:var(--ink)}
-.btn.p{background:var(--acc);border-color:var(--acc);color:#fff}.btn.p:hover{background:#00559C;border-color:#00559C;color:#fff}
-.btn.g{border-color:transparent;background:transparent}.btn.g:hover{background:var(--sunk)}
+.rbar{display:flex;align-items:center;gap:8px;padding:10px 22px;border-bottom:1px solid #D9DDE3;background:#fff;box-shadow:0 1px 3px rgba(20,25,35,.05);position:relative;z-index:2}
+.rbar .vsep{width:1px;height:22px;background:#D9DDE3;margin:0 2px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid #C9CED6;background:#fff;border-radius:8px;padding:7px 12px;font-size:12.5px;color:#2F3440;font-weight:600;box-shadow:0 1px 2px rgba(20,25,35,.06)}
+.btn svg{color:var(--acc)}
+.btn:hover{border-color:var(--acc);color:var(--acc3);background:#F4F8FD;text-decoration:none}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#fff}.btn.p svg{color:#fff}.btn.p:hover{background:#00559C;border-color:#00559C;color:#fff}
+.btn.g{border-color:#C9CED6;background:#fff}.btn.g:hover{background:#F4F8FD}
 .btn[disabled]{opacity:.5;cursor:default}
 .rbar .sp,.dbar .sp{flex:1}
-.rbar .sec{padding:0;font-weight:500;font-size:12px;gap:5px}
+.rbar .sec{padding:4px 10px;font-weight:600;font-size:11.5px;gap:5px;color:#4B5160;background:#F2F3F5;border:1px solid #E2E4E8;border-radius:12px;display:inline-flex;align-items:center}
 .rscroll{overflow-y:auto;flex:1;min-height:0}
 .rbody{padding:22px 28px 40px;max-width:920px}
 h1{font-size:21px;margin:0 0 12px;letter-spacing:-.4px;line-height:1.38}
@@ -201,9 +206,9 @@ html[data-theme=autumn] .split{right:-9px}
       <span class="kbd">/</span>
     </form>
     <div class="brief">
-      <a class="bc {{ 'hot' if n_action }}" href="{{ qs(view='action', cat='', sub='') }}"><div class="k"><svg class="i sm"><use href="#check"/></svg>조치 필요</div><div class="v">{{ n_action }}<small>{{ plabel }}</small></div></a>
-      <a class="bc" href="{{ qs(view='deadline', cat='', sub='') }}"><div class="k"><svg class="i sm"><use href="#clock"/></svg>7일 내 마감</div><div class="v">{{ dl[2] }}<small>{% if dl[1] %}{% set d0 = (dl[1] - today).days %}{{ '오늘 마감 있음' if d0 == 0 else 'D-' ~ d0 ~ ' 가장 빠름' }}{% else %}없음{% endif %}</small></div></a>
-      <a class="bc" href="{{ qs(view='', cat='', sub='', period='today') }}"><div class="k"><svg class="i sm"><use href="#inbox"/></svg>오늘 새 메일</div><div class="v">{{ n_today }}<small>통</small></div></a>
+      <a class="bc k1 {{ 'hot' if n_action }} {{ 'on' if view == 'action' }}" href="{{ qs(view='action', cat='', sub='') }}"><div class="k"><svg class="i sm"><use href="#check"/></svg>조치 필요</div><div class="v">{{ n_action }}<small>{{ plabel }}</small></div></a>
+      <a class="bc k2 {{ 'on' if view == 'deadline' }}" href="{{ qs(view='deadline', cat='', sub='') }}"><div class="k"><svg class="i sm"><use href="#clock"/></svg>7일 내 마감</div><div class="v">{{ dl[2] }}<small>{% if dl[1] %}{% set d0 = (dl[1] - today).days %}{{ '오늘 마감 있음' if d0 == 0 else 'D-' ~ d0 ~ ' 가장 빠름' }}{% else %}없음{% endif %}</small></div></a>
+      <a class="bc k3 {{ 'on' if period == 'today' and view == 'all' }}" href="{{ qs(view='', cat='', sub='', period='today') }}"><div class="k"><svg class="i sm"><use href="#inbox"/></svg>오늘 새 메일</div><div class="v">{{ n_today }}<small>통</small></div></a>
     </div>
     <div class="ltitle"><h2>{{ title }}</h2><span class="c">{{ cnt }}건{% if q %} · '{{ q }}' 검색{% endif %}</span>
       {% if q or cat or sub or view != 'all' %}<a class="clr" href="/dashboard2">초기화 ✕</a>{% endif %}</div>
